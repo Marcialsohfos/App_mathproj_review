@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import io
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 from datetime import datetime
 
 class ProjectionDemographique:
@@ -79,6 +80,14 @@ st.markdown("""
         color: white;
         text-align: center;
     }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin: 0.5rem;
+    }
     .city-card {
         background: white;
         padding: 1rem;
@@ -86,6 +95,14 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 1rem;
         border-left: 4px solid #667eea;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
     }
     .stButton > button {
         width: 100%;
@@ -253,8 +270,7 @@ with col2:
                         label="📊 Télécharger Excel",
                         data=output,
                         file_name=f"projections_demographiques_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key="download_excel"
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
         
         with col_action2:
@@ -291,8 +307,8 @@ with col2:
                 
                 st.dataframe(df_projections, use_container_width=True, hide_index=True)
                 
-                # Graphique avec matplotlib
-                fig, ax = plt.subplots(figsize=(10, 5))
+                # Graphique
+                fig = go.Figure()
                 
                 annees_historiques = [2016, 2018, 2020]
                 pops_historiques = [data['projections'][2016], data['projections'][2018], data['projections'][2020]]
@@ -301,21 +317,30 @@ with col2:
                 pops_projection = [data['projections'][2023], data['projections'][2024], 
                                   data['projections'][2025], data['projections'][2026]]
                 
-                ax.plot(annees_historiques, pops_historiques, 'bo-', label='Données historiques', linewidth=2, markersize=8)
-                ax.plot(annees_projection, pops_projection, 'ro--', label='Projections', linewidth=2, markersize=8)
+                fig.add_trace(go.Scatter(
+                    x=annees_historiques, y=pops_historiques,
+                    mode='markers+lines', name='Données historiques',
+                    line=dict(color='blue', width=3),
+                    marker=dict(size=10, color='blue')
+                ))
                 
-                ax.set_xlabel('Année', fontsize=12)
-                ax.set_ylabel('Population', fontsize=12)
-                ax.set_title(f'Évolution démographique - {ville}', fontsize=14, fontweight='bold')
-                ax.legend()
-                ax.grid(True, alpha=0.3)
+                fig.add_trace(go.Scatter(
+                    x=annees_projection, y=pops_projection,
+                    mode='markers+lines', name='Projections',
+                    line=dict(color='red', width=3, dash='dash'),
+                    marker=dict(size=10, color='red')
+                ))
                 
-                # Formater l'axe y avec des milliers
-                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{int(x):,}'))
+                fig.update_layout(
+                    title=f"Évolution démographique - {ville}",
+                    xaxis_title="Année",
+                    yaxis_title="Population",
+                    hovermode='x unified',
+                    showlegend=True,
+                    height=400
+                )
                 
-                st.pyplot(fig)
-                plt.close()
-                
+                st.plotly_chart(fig, use_container_width=True)
                 st.markdown("---")
     else:
         st.info("👈 Ajoutez une ville à gauche pour commencer les projections")
